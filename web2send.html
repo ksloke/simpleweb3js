@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.0.0-beta.34/dist/web3.min.js"></script>
+</head>
+<body>
+
+  <h1>Send ERC20 Token</h1>
+
+  <h2>Notes</h2>
+  <ul>
+    <li>Use MetaMask - address used to send will be selected at MetaMask</li>
+    <li>Please connect to Kovan test net</li>
+    <li>Contract owner account is 0xa60642Deccebf29d07542409b5e4A77BfDA0b30c</li>
+    
+  </ul>
+
+  <h2>Token Address</h2>
+  <input type="text" id="token-address" size="80" value="0x281FcFF3f2E0eaf2ddd5eBA7b6BD139c40541387"></input>
+  <p>e.g. 0x281FcFF3f2E0eaf2ddd5eBA7b6BD139c40541387</p>
+  
+  <h2>Recipients Address</h2>
+  <input type="text" id="to-address" size="80"></input>
+  <p>e.g. 0x2E6801480f5f59ED5bD63e7260cF6F8651EeC6B8</p>
+
+  <h2>Decimals</h2>
+  <input type="number" id="decimals" size="40" readonly></input>
+
+  <h2>Amount</h2>
+  <input type="number" id="amount" size="40" value=1></input>
+
+  <div><button id="send" onclick="send()">Send ERC20 Token</button></div>
+
+  <h2>Result</h2>
+  <span id="transfer-result"></span>
+  <p></p>
+  <h1>Get ERC20 Token Balance</h1>
+  <p>Ethereum support browser or MetaMask is needed.</p>
+
+  <h2>Wallet Address</h2>
+  <input type="text" id="wallet-address" size="80"></input>
+  <p>e.g. 0x2E6801480f5f59ED5bD63e7260cF6F8651EeC6B8</p>
+
+  <div><button id="balance" onclick="getBalance()">Get ERC20 Token Balance</button></div>
+
+  <h2>Result</h2>
+  <span id="balance-result"></span>
+
+  <script>
+
+    var web3;
+    var tokenContract;
+    var account;
+    var decimal;
+
+
+    function getERC20TokenContract(tokenAddress) {
+      let minABI = [
+   {"constant":false,"inputs":[{"name":"account","type":"address"}],"name":"addPauser","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"value","type":"uint256"}],"name":"approve","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"constant":false,"inputs":[{"name":"amount","type":"uint256"}],"name":"burn","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"subtractedValue","type":"uint256"}],"name":"decreaseAllowance","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"constant":false,"inputs":[{"name":"spender","type":"address"},{"name":"addedValue","type":"uint256"}],"name":"increaseAllowance","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"constant":false,"inputs":[],"name":"pause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"anonymous":false,"inputs":[{"indexed":false,"name":"account","type":"address"}],"name":"Paused","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"account","type":"address"}],"name":"PauserAdded","type":"event"},{"anonymous":false,"inputs":[{"indexed":true,"name":"account","type":"address"}],"name":"PauserRemoved","type":"event"},
+	 {"constant":false,"inputs":[],"name":"renounceOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[],"name":"renouncePauser","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"constant":false,"inputs":[{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transfer","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"anonymous":false,"inputs":[{"indexed":true,"name":"from","type":"address"},{"indexed":true,"name":"to","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Transfer","type":"event"},
+	 {"anonymous":false,"inputs":[{"indexed":true,"name":"owner","type":"address"},{"indexed":true,"name":"spender","type":"address"},{"indexed":false,"name":"value","type":"uint256"}],"name":"Approval","type":"event"},
+	 {"anonymous":false,"inputs":[{"indexed":true,"name":"previousOwner","type":"address"},{"indexed":true,"name":"newOwner","type":"address"}],"name":"OwnershipTransferred","type":"event"},
+	 {"constant":false,"inputs":[{"name":"from","type":"address"},{"name":"to","type":"address"},{"name":"value","type":"uint256"}],"name":"transferFrom","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"constant":false,"inputs":[{"name":"newOwner","type":"address"}],"name":"transferOwnership","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},{"inputs":[],"payable":false,"stateMutability":"nonpayable","type":"constructor"},
+	 {"constant":false,"inputs":[],"name":"unpause","outputs":[],"payable":false,"stateMutability":"nonpayable","type":"function"},
+	 {"anonymous":false,"inputs":[{"indexed":false,"name":"account","type":"address"}],"name":"Unpaused","type":"event"},
+	 {"constant":true,"inputs":[{"name":"owner","type":"address"},{"name":"spender","type":"address"}],"name":"allowance","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[{"name":"account","type":"address"}],"name":"balanceOf","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"decimals","outputs":[{"name":"","type":"uint8"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"isOwner","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[{"name":"account","type":"address"}],"name":"isPauser","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"name","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"owner","outputs":[{"name":"","type":"address"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"paused","outputs":[{"name":"","type":"bool"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"symbol","outputs":[{"name":"","type":"string"}],"payable":false,"stateMutability":"view","type":"function"},
+	 {"constant":true,"inputs":[],"name":"totalSupply","outputs":[{"name":"","type":"uint256"}],"payable":false,"stateMutability":"view","type":"function"}
+      ];
+      return new web3.eth.Contract(minABI, tokenAddress);
+    }
+
+    function getERC20TokenDecimals(callback) {
+      tokenContract.methods.decimals().call((error, decimals) => {
+        callback(decimals);
+        decimal=decimals;
+      });
+    }
+
+    function getTokenContractAddress() {
+      let tokenAddress = document.getElementById('token-address').value;
+      if(web3.utils.isAddress(tokenAddress)){
+        if(tokenAddress != "") {
+          tokenContract = getERC20TokenContract(tokenAddress);
+          getERC20TokenDecimals((decimals) => {
+            document.getElementById('decimals').value = decimals;
+            
+          });
+          console.log("got tokenAddress "+tokenAddress)
+        }
+      }
+      else {
+        alert("Token Address failed checksum!");
+      }
+    }
+
+    function transferERC20Token(toAddress, value, callback) {
+      //faled address checksum need to be detected
+      tokenContract.methods.transfer(toAddress, value).send({from: account})
+      .on('transactionHash', (txHash) => {
+        document.getElementById('transfer-result').innerText = "Success - Transaction Hash = " + txHash;
+      })
+      .on('error', (error, receipt) => {
+        document.getElementById('transfer-result').innerText = "Error: "+ toAddress+" "+ error;
+        //log error address here
+        console.log('Error : '+toAddress);
+      });
+    }
+
+    function send() {
+      var toAddress = document.getElementById('to-address').value;
+      var tokenAddress = document.getElementById('token-address').value;
+      if(web3.utils.isAddress(toAddress) || web3.utils.isAddress(tokenAddress)){
+        var decimals = web3.utils.toBN(document.getElementById('decimals').value);
+        var amount = web3.utils.toBN(document.getElementById('amount').value);
+        var sendValue = amount.mul(web3.utils.toBN(10).pow(decimals));
+        console.log(sendValue.toString());
+        getTokenContractAddress();
+        transferERC20Token(toAddress, sendValue, );
+      }
+      else {
+        if(!web3.utils.isAddress(toAddress)){
+          alert("To Address failed checksum.");
+        }
+        if(!web3.utils.isAddress(tokenAddress)) {
+          alert("Token Address failed checksum.");
+        }
+      }
+    }
+
+    function getERC20TokenBalance(walletAddress, callback) {
+
+        tokenContract.methods.balanceOf(walletAddress).call().then((result)=>{
+          var res = web3.utils.toBN(result);
+          res = res / (10 ** decimal);
+          document.getElementById('balance-result').innerText=res;
+          console.log(res)
+      });
+        
+        
+    }
+
+    function getBalance(){
+      var tokenAddress = document.getElementById('token-address').value;
+      var walletAddress = document.getElementById('wallet-address').value;
+      let decimals = web3.utils.toBN(document.getElementById('decimals').value);
+      var amount = web3.utils.toBN(document.getElementById('amount').value);
+      
+      var sendValue = amount.mul(web3.utils.toBN(10).pow(decimals));
+      console.log("decimals "+decimals.toString());
+      getTokenContractAddress();
+      getERC20TokenBalance(walletAddress);
+    }
+
+    window.addEventListener('load', async () => {
+    // Modern dapp browsers...
+    if (window.ethereum) {
+      window.web3 = new Web3(ethereum);
+      try {
+        // Request account access if needed
+        await ethereum.enable();
+        console.log(web3.version);
+        getAccounts();
+        // send_something();
+      } catch (error) {
+        console.log(error);
+        // User denied account access...
+      }
+    }
+    // Legacy dapp browsers...
+    else if (window.web3) {
+      window.web3 = new Web3(web3.currentProvider);
+      console.log(web3.version);
+      getaccounts();
+    }
+    // Non-dapp browsers...
+    else {
+      console.log('Non-Ethereum browser detected. You should consider trying MetaMask!');
+  }
+});
+
+
+function getAccounts(){
+  var accountInterval = setInterval(function() {
+        web3.eth.getAccounts((error, address) => {
+          if (address[0] !== account) {
+            account = address[0];
+            console.log(account);
+          }
+        });
+
+      }, 300);
+
+}
+
+
+  </script>
+ <footer>
+  <p>Posted by: ksloke@gmail.com</p>
+  <p>https://github.com/ksloke/simpleweb3js/</p>
+</footer> 
+</body>
+</html>
